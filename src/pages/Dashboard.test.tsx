@@ -210,7 +210,7 @@ describe('Dashboard', () => {
         <Dashboard />
       </MemoryRouter>,
     )
-    expect(screen.getByPlaceholderText('e.g. XLM')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search by asset pair...')).toBeInTheDocument()
   })
 
   it('filters price cards by search query', async () => {
@@ -233,7 +233,7 @@ describe('Dashboard', () => {
       </MemoryRouter>,
     )
 
-    const searchInput = screen.getByPlaceholderText('e.g. XLM')
+    const searchInput = screen.getByPlaceholderText('Search by asset pair...')
     await user.type(searchInput, 'btc')
 
     expect(screen.getByText('BTC/USD')).toBeInTheDocument()
@@ -260,7 +260,7 @@ describe('Dashboard', () => {
       </MemoryRouter>,
     )
 
-    const searchInput = screen.getByPlaceholderText('e.g. XLM')
+    const searchInput = screen.getByPlaceholderText('Search by asset pair...')
     await user.type(searchInput, 'zzz')
 
     expect(screen.queryByText('BTC/USD')).not.toBeInTheDocument()
@@ -286,7 +286,7 @@ describe('Dashboard', () => {
         <Dashboard />
       </MemoryRouter>,
     )
-    expect(screen.queryByPlaceholderText('e.g. XLM')).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText('Search by asset pair...')).not.toBeInTheDocument()
   })
 
   it('shows AlertBadge with active count', async () => {
