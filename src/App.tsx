@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Dashboard } from './pages/Dashboard'
 import { NotFound } from './pages/NotFound'
+import { useWebVitals } from './hooks/useWebVitals'
 import { PreferencesProvider } from './preferences/PreferencesContext'
 
 const PriceDetail = lazy(() =>
@@ -40,6 +41,8 @@ function AppContent() {
 }
 
 export default function App() {
+  useWebVitals()
+
   return (
     <BrowserRouter basename={BASENAME}>
       <AppContent />
