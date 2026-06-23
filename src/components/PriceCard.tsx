@@ -13,11 +13,12 @@ interface PriceCardProps {
   price: PriceData
   onClick?: () => void
   isLive?: boolean
+  isStale?: boolean
   hasAlert?: boolean
   onAlertClick?: (e: React.MouseEvent) => void
 }
 
-export const PriceCard = memo(function PriceCard({ price, onClick, isLive, hasAlert, onAlertClick }: PriceCardProps) {
+export const PriceCard = memo(function PriceCard({ price, onClick, isLive, isStale, hasAlert, onAlertClick }: PriceCardProps) {
   const confidencePct = (price.confidence * 100).toFixed(1)
 
   return (
@@ -31,7 +32,7 @@ export const PriceCard = memo(function PriceCard({ price, onClick, isLive, hasAl
       }}
       role="button"
       tabIndex={0}
-      className="w-full text-left bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 hover:bg-gray-900/80 transition-all shadow-lg shadow-black/20 cursor-pointer"
+      className={`w-full text-left bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 hover:bg-gray-900/80 transition-all shadow-lg shadow-black/20 cursor-pointer ${isStale ? 'opacity-60' : ''}`}
       aria-label={`View details for ${price.assetPair}`}
     >
       <div className="flex items-center justify-between mb-3">

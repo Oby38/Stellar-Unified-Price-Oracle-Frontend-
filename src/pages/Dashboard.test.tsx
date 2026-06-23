@@ -6,19 +6,15 @@ import { Dashboard } from './Dashboard'
 
 afterEach(cleanup)
 
-vi.mock('../hooks/usePrices', () => ({
-  usePrices: vi.fn(() => ({
+vi.mock('../context/PriceContext', () => ({
+  usePriceContext: vi.fn(() => ({
     prices: [],
-    loading: true,
-    error: null,
-    refetch: vi.fn(),
-  })),
-}))
-
-vi.mock('../hooks/useWebSocket', () => ({
-  useWebSocket: vi.fn(() => ({
+    pricesLoading: true,
+    pricesError: null,
+    pricesValidating: false,
     livePrices: new Map(),
-    status: 'disconnected',
+    wsStatus: 'disconnected',
+    refetchPrices: vi.fn(),
     subscribe: vi.fn(),
     unsubscribe: vi.fn(),
   })),
@@ -54,12 +50,17 @@ describe('Dashboard', () => {
   })
 
   it('shows error alert when there is an error', async () => {
-    const usePrices = await import('../hooks/usePrices')
-    vi.mocked(usePrices.usePrices).mockReturnValue({
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
       prices: [],
-      loading: false,
-      error: 'Something broke',
-      refetch: vi.fn(),
+      pricesLoading: false,
+      pricesError: 'Something broke',
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
     })
     render(
       <MemoryRouter>
@@ -70,12 +71,17 @@ describe('Dashboard', () => {
   })
 
   it('shows empty state when no prices loaded', async () => {
-    const usePrices = await import('../hooks/usePrices')
-    vi.mocked(usePrices.usePrices).mockReturnValue({
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
       prices: [],
-      loading: false,
-      error: null,
-      refetch: vi.fn(),
+      pricesLoading: false,
+      pricesError: null,
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
     })
     render(
       <MemoryRouter>
@@ -87,12 +93,17 @@ describe('Dashboard', () => {
   })
 
   it('renders price cards when data exists', async () => {
-    const usePrices = await import('../hooks/usePrices')
-    vi.mocked(usePrices.usePrices).mockReturnValue({
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
       prices: mockPrices,
-      loading: false,
-      error: null,
-      refetch: vi.fn(),
+      pricesLoading: false,
+      pricesError: null,
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
     })
     render(
       <MemoryRouter>
@@ -104,12 +115,17 @@ describe('Dashboard', () => {
   })
 
   it('opens alert modal when Set alert is clicked', async () => {
-    const usePrices = await import('../hooks/usePrices')
-    vi.mocked(usePrices.usePrices).mockReturnValue({
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
       prices: mockPrices,
-      loading: false,
-      error: null,
-      refetch: vi.fn(),
+      pricesLoading: false,
+      pricesError: null,
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
     })
     const user = userEvent.setup()
     render(
@@ -123,12 +139,17 @@ describe('Dashboard', () => {
   })
 
   it('creates alert from modal and shows indicator', async () => {
-    const usePrices = await import('../hooks/usePrices')
-    vi.mocked(usePrices.usePrices).mockReturnValue({
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
       prices: mockPrices,
-      loading: false,
-      error: null,
-      refetch: vi.fn(),
+      pricesLoading: false,
+      pricesError: null,
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
     })
     const user = userEvent.setup()
     render(
@@ -145,12 +166,17 @@ describe('Dashboard', () => {
   })
 
   it('shows AlertBadge with active count', async () => {
-    const usePrices = await import('../hooks/usePrices')
-    vi.mocked(usePrices.usePrices).mockReturnValue({
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
       prices: mockPrices,
-      loading: false,
-      error: null,
-      refetch: vi.fn(),
+      pricesLoading: false,
+      pricesError: null,
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
     })
     const user = userEvent.setup()
     render(

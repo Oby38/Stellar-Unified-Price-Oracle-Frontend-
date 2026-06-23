@@ -1,8 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState, useCallback } from 'react'
 import { usePriceHistory } from '../hooks/usePriceHistory'
-import { useWebSocket } from '../hooks/useWebSocket'
-import { usePrices } from '../hooks/usePrices'
+import { usePriceContext } from '../context/PriceContext'
 import { useAlerts } from '../hooks/useAlerts'
 import { PriceChart } from '../components/PriceChart'
 import { SourceHealthBadge } from '../components/SourceHealthBadge'
@@ -17,8 +16,7 @@ export function PriceDetail() {
   const navigate = useNavigate()
   const decodedPair = pair ? decodeURIComponent(pair) : null
   const { history, loading: historyLoading } = usePriceHistory(decodedPair)
-  const { prices } = usePrices(decodedPair ? [decodedPair] : undefined)
-  const { livePrices, status, subscribe, unsubscribe } = useWebSocket()
+  const { prices, livePrices, wsStatus, subscribe, unsubscribe } = usePriceContext()
   const { alerts, addAlert, updateAlert, removeAlert, getAlertsForPair, hasAlertsForPair } = useAlerts()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -112,7 +110,7 @@ export function PriceDetail() {
               <span className="text-sm text-cyan-400">
                 {(priceData.confidence * 100).toFixed(1)}% confidence
               </span>
-              <ConnectionBadge status={status} />
+              <ConnectionBadge status={wsStatus} />
             </div>
           </div>
 

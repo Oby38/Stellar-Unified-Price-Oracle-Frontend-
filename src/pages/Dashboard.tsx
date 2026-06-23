@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { usePrices } from '../hooks/usePrices'
-import { useWebSocket } from '../hooks/useWebSocket'
+import { usePriceContext } from '../context/PriceContext'
 import { useAlerts } from '../hooks/useAlerts'
 import { PriceCard } from '../components/PriceCard'
 import { PriceCardSkeleton } from '../components/PriceCardSkeleton'
@@ -25,8 +24,7 @@ function mergePrices(
 }
 
 export function Dashboard() {
-  const { prices, loading, error } = usePrices()
-  const { livePrices, status } = useWebSocket(prices.map((p) => p.assetPair))
+  const { prices, pricesLoading, pricesError, pricesValidating, livePrices, wsStatus } = usePriceContext()
   const navigate = useNavigate()
   const { alerts, addAlert, removeAlert, hasAlertsForPair, activeCount } = useAlerts()
 
@@ -74,17 +72,17 @@ export function Dashboard() {
         </div>
         <div className="flex items-center gap-3">
           <AlertBadge count={activeCount} alerts={alerts} />
-          <ConnectionBadge status={status} />
+          <ConnectionBadge status={wsStatus} />
         </div>
       </div>
 
-      {error && (
+      {pricesError && (
         <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-xl text-sm text-red-400" role="alert">
-          {error}
+          {pricesError}
         </div>
       )}
 
-      {loading && prices.length === 0 ? (
+      {pricesLoading && prices.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" aria-label="Loading price cards">
           {Array.from({ length: SKELETON_COUNT }, (_, i) => (
             <PriceCardSkeleton key={i} />
@@ -97,6 +95,7 @@ export function Dashboard() {
               key={p.assetPair}
               price={p}
               isLive={livePrices.has(p.assetPair)}
+              isStale={pricesValidating}
               hasAlert={hasAlertsForPair(p.assetPair)}
               onClick={() => handleCardClick(p.assetPair)}
               onAlertClick={(e) => handleAlertClick(e, p.assetPair)}
@@ -105,7 +104,7 @@ export function Dashboard() {
         </div>
       )}
 
-      {!loading && merged.length === 0 && (
+      {!pricesLoading && merged.length === 0 && (
         <div className="text-center py-32 text-gray-500">
           <p className="text-lg mb-2">No price feeds available</p>
           <p className="text-sm">Connect to the aggregator API to see price data.</p>
