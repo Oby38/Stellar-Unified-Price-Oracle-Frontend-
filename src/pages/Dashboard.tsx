@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { usePriceContext } from '../context/PriceContext'
 import { useAlerts } from '../hooks/useAlerts'
+import { useExport } from '../hooks/useExport'
 import { useColumnCount } from '../hooks/useColumnCount'
 import { PriceCard } from '../components/PriceCard'
 import { PriceCardSkeleton } from '../components/PriceCardSkeleton'
@@ -11,6 +12,7 @@ import { AlertBadge } from '../components/AlertBadge'
 import { ConnectionBadge } from '../components/ConnectionBadge'
 import { NetworkStatusBanner } from '../components/NetworkStatusBanner'
 import { FilterBar } from '../components/FilterBar'
+import { ExportButton } from '../components/ExportButton'
 import type { AlertFormData } from '../types'
 
 const ROW_HEIGHT = 200
@@ -33,6 +35,7 @@ export function Dashboard() {
   const { prices, pricesLoading, pricesError, pricesValidating, livePrices, wsStatus } = usePriceContext()
   const navigate = useNavigate()
   const { alerts, addAlert, removeAlert, hasAlertsForPair, activeCount } = useAlerts()
+  const { exporting, exportPrices } = useExport()
   const [searchParams] = useSearchParams()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -125,6 +128,11 @@ export function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <ExportButton
+            onExport={(fmt) => exportPrices(filtered, fmt)}
+            exporting={exporting}
+            disabled={filtered.length === 0}
+          />
           <AlertBadge count={activeCount} alerts={alerts} />
           <ConnectionBadge status={wsStatus} />
         </div>
