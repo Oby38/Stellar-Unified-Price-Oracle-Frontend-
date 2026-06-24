@@ -163,3 +163,16 @@ export const PriceCard = memo(function PriceCard({ price, onClick, isLive, isSta
     </>
   )
 })
+
+/**
+ * PriceCard with self-contained sparkline history fetching.
+ * When `history` prop is provided it is used directly (useful in tests/stories).
+ * When omitted the card fetches its own history via useSparkline.
+ */
+export const PriceCard = memo(function PriceCard(props: PriceCardProps) {
+  // Only call useSparkline when no external history is supplied.
+  // This wrapper exists to keep the hook call unconditional (Rules of Hooks).
+  const fetchedHistory = useSparkline(props.price.assetPair, 24)
+  const history = props.history ?? fetchedHistory
+  return <PriceCardInner {...props} history={history} />
+})
