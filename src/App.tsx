@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Dashboard } from './pages/Dashboard'
 import { NotFound } from './pages/NotFound'
+
+const PriceDetail = lazy(() =>
+  import('./pages/PriceDetail').then((m) => ({ default: m.PriceDetail })),
+)
 import { useWebVitals } from './hooks/useWebVitals'
 import { useAccessibility } from './hooks/useAccessibility'
 import { PreferencesProvider } from './preferences/PreferencesContext'
@@ -22,10 +26,13 @@ function AppContent() {
     <ErrorBoundary key={location.key}>
       <PreferencesProvider>
         <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/price/:pair" element={<PriceDetail />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </Layout>
       </PreferencesProvider>
     </ErrorBoundary>
