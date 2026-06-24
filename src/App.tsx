@@ -3,6 +3,7 @@ import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Dashboard } from './pages/Dashboard'
 import { NotFound } from './pages/NotFound'
+import { OpsDashboard } from './pages/OpsDashboard'
 import { useWebVitals } from './hooks/useWebVitals'
 import { useAccessibility } from './hooks/useAccessibility'
 import { PreferencesProvider } from './preferences/PreferencesContext'
@@ -20,6 +21,7 @@ function AppContent() {
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/ops" element={<OpsDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

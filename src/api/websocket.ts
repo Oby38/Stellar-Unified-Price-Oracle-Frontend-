@@ -1,5 +1,6 @@
 import { config } from '../config'
 import type { WsMessage, WsSubscribeMessage, WsUnsubscribeMessage } from '../types'
+import { recordWebSocketEvent } from '../utils/monitoring'
 
 type MessageHandler = (msg: WsMessage) => void
 type StatusHandler = (status: ConnectionStatus) => void
@@ -38,6 +39,7 @@ export class WebSocketClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private destroyed = false
   private subscribedPairs = new Set<string>()
+  private connectStartedAt: number | null = null
   /** Whether the server negotiated compressed binary frames */
   private useCompression = false
 
@@ -54,6 +56,7 @@ export class WebSocketClient {
   connect() {
     if (this.destroyed) return
     this.setStatus('connecting')
+    this.connectStartedAt = Date.now()
 
     // Append ?compress=1 to signal compression support to the server
     const url = supportsDecompression
@@ -66,6 +69,9 @@ export class WebSocketClient {
 
     this.ws.onopen = () => {
       this.setStatus('connected')
+      const latencyMs = this.connectStartedAt ? Date.now() - this.connectStartedAt : 0
+      recordWebSocketEvent({ type: 'connect', timestamp: Date.now(), details: 'websocket connected' })
+      recordWebSocketEvent({ type: 'latency', timestamp: Date.now(), latencyMs, details: 'connection open latency' })
       if (this.subscribedPairs.size > 0) {
         this.send({
           action: 'subscribe',
@@ -94,10 +100,12 @@ export class WebSocketClient {
     this.ws.onclose = () => {
       this.useCompression = false
       this.setStatus('disconnected')
+      recordWebSocketEvent({ type: 'disconnect', timestamp: Date.now(), details: 'websocket closed' })
       this.scheduleReconnect()
     }
 
     this.ws.onerror = () => {
+      recordWebSocketEvent({ type: 'error', timestamp: Date.now(), details: 'websocket error' })
       this.ws?.close()
     }
   }
@@ -107,6 +115,7 @@ export class WebSocketClient {
     this.setStatus('reconnecting')
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
+      recordWebSocketEvent({ type: 'reconnect', timestamp: Date.now(), details: 'reconnect attempt' })
       this.connect()
     }, config.wsReconnectDelay)
   }

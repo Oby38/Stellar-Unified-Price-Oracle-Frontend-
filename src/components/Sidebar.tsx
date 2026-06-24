@@ -98,6 +98,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: 'Monitoring',
     items: [
+      { path: '/ops', label: 'Ops', section: 'monitoring', icon: <HealthIcon /> },
       { path: '/health', label: 'Health', section: 'monitoring', icon: <HealthIcon /> },
       { path: '/alerts', label: 'Alerts', section: 'monitoring', icon: <AlertsIcon /> },
     ],
