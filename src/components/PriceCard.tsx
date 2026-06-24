@@ -62,52 +62,54 @@ export const PriceCard = memo(function PriceCard({ price, onClick, isLive, isSta
   )
 
   return (
-    <div
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClick?.()
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      className={`w-full text-left bg-gray-900 border rounded-xl p-5 hover:border-gray-700 hover:bg-gray-900/80 transition-all shadow-lg shadow-black/20 cursor-pointer ${isStale ? 'opacity-60' : ''} ${isSelected ? 'border-cyan-500 ring-2 ring-cyan-500/40' : isDragOver ? 'border-cyan-500 ring-1 ring-cyan-500/40' : 'border-gray-800'}`}
-      aria-label={`View details for ${price.assetPair}`}
-      aria-selected={selectMode ? isSelected : undefined}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {selectMode ? (
-            <span
-              className={`w-4 h-4 flex items-center justify-center rounded border ${isSelected ? 'bg-cyan-600 border-cyan-500' : 'border-gray-600'}`}
-              aria-hidden="true"
-            >
-              {isSelected && (
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+    <>
+      <div
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onClick?.()
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        {...contextMenuProps}
+        className={`w-full text-left bg-gray-900 border rounded-xl p-5 hover:border-gray-700 hover:bg-gray-900/80 transition-all shadow-lg shadow-black/20 cursor-pointer ${isStale ? 'opacity-60' : ''} ${isSelected ? 'border-cyan-500 ring-2 ring-cyan-500/40' : isDragOver ? 'border-cyan-500 ring-1 ring-cyan-500/40' : 'border-gray-800'}`}
+        aria-label={`View details for ${price.assetPair}`}
+        aria-selected={selectMode ? isSelected : undefined}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {selectMode ? (
+              <span
+                className={`w-4 h-4 flex items-center justify-center rounded border ${isSelected ? 'bg-cyan-600 border-cyan-500' : 'border-gray-600'}`}
+                aria-hidden="true"
+              >
+                {isSelected && (
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </span>
+            ) : dragHandleProps ? (
+              <button
+                type="button"
+                {...overflowButtonProps}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  overflowButtonProps.onClick(e)
+                }}
+                className="p-1 rounded-md text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <circle cx="8" cy="3" r="1.2" />
+                  <circle cx="8" cy="8" r="1.2" />
+                  <circle cx="8" cy="13" r="1.2" />
                 </svg>
-              )}
-            </span>
-          ) : dragHandleProps ? (
-            <button
-              type="button"
-              {...overflowButtonProps}
-              onClick={(e) => {
-                e.stopPropagation()
-                overflowButtonProps.onClick(e)
-              }}
-              className="p-1 rounded-md text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-colors"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <circle cx="8" cy="3" r="1.2" />
-                <circle cx="8" cy="8" r="1.2" />
-                <circle cx="8" cy="13" r="1.2" />
-              </svg>
-            </button>
-          ) : null}
-          <h3 className="text-lg font-semibold text-gray-100">{price.assetPair}</h3>
-        </div>
+              </button>
+            ) : null}
+            <h2 className="text-lg font-semibold text-gray-100">{price.assetPair}</h2>
+          </div>
 
         <div className="text-3xl font-bold text-gray-900 dark:text-white mb-3 font-mono tracking-tight">
           ${formatPrice(price.price)}

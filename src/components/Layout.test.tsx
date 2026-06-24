@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AlertsProvider } from '../hooks/useAlerts'
 import { Layout } from './Layout'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -21,6 +22,18 @@ vi.mock('../context/PriceContext', () => ({
 }))
 
 describe('Layout', () => {
+  it('should have no accessibility violations', async () => {
+    await checkAccessibility(
+      <MemoryRouter>
+        <AlertsProvider>
+          <Layout>
+            <div>Test Content</div>
+          </Layout>
+        </AlertsProvider>
+      </MemoryRouter>,
+    )
+  })
+
   it('renders children', () => {
     render(
       <MemoryRouter>

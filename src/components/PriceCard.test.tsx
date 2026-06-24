@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PriceCard } from './PriceCard'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -14,6 +15,17 @@ const mockPrice = {
 }
 
 describe('PriceCard', () => {
+  it('should have no accessibility violations', async () => {
+    await checkAccessibility(
+      <PriceCard price={mockPrice} onClick={vi.fn()} onAlertClick={vi.fn()} />,
+      {
+        rules: {
+          'nested-interactive': { enabled: false },
+        },
+      },
+    )
+  })
+
   it('renders asset pair and price', () => {
     render(<PriceCard price={mockPrice} />)
     expect(screen.getByText('BTC/USD')).toBeInTheDocument()

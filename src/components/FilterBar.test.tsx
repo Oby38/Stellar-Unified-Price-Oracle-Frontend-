@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useSearchParams } from 'react-router-dom'
 import { FilterBar } from './FilterBar'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -16,6 +17,14 @@ function URLDisplay() {
 }
 
 describe('FilterBar', () => {
+  it('should have no accessibility violations', async () => {
+    await checkAccessibility(
+      <MemoryRouter>
+        <FilterBar />
+      </MemoryRouter>,
+    )
+  })
+
   it('renders all filter controls', () => {
     render(<FilterBar />, { wrapper: TestWrapper })
     expect(screen.getByLabelText('Search Asset Pair')).toBeInTheDocument()

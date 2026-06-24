@@ -3,6 +3,7 @@ import { cleanup, render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AlertModal } from './AlertModal'
 import type { Alert } from '../types'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -26,6 +27,10 @@ const mockAlert: Alert = {
 describe('AlertModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('should have no accessibility violations when open', async () => {
+    await checkAccessibility(<AlertModal {...defaultProps} />)
   })
 
   it('renders nothing when closed', () => {

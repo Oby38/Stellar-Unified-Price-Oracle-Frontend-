@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { Dashboard } from './Dashboard'
 import { AlertsProvider } from '../hooks/useAlerts'
+import { checkAccessibility } from '../test/accessibility'
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({ count, estimateSize }: { count: number; estimateSize: (i: number) => number }) => {
@@ -55,9 +56,63 @@ const mockPrices = [
 ]
 
 describe('Dashboard', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     localStorage.clear()
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
+      prices: [],
+      pricesLoading: true,
+      pricesError: null,
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
+    })
+  })
+
+  it('should have no accessibility violations when loading', async () => {
+    await checkAccessibility(
+      <MemoryRouter>
+        <AlertsProvider>
+          <Dashboard />
+        </AlertsProvider>
+      </MemoryRouter>,
+      {
+        rules: {
+          'nested-interactive': { enabled: false },
+        },
+      },
+    )
+  })
+
+  it('should have no accessibility violations with data', async () => {
+    const { usePriceContext } = await import('../context/PriceContext')
+    vi.mocked(usePriceContext).mockReturnValue({
+      prices: mockPrices,
+      pricesLoading: false,
+      pricesError: null,
+      pricesValidating: false,
+      livePrices: new Map(),
+      wsStatus: 'disconnected',
+      refetchPrices: vi.fn(),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
+    })
+    await checkAccessibility(
+      <MemoryRouter>
+        <AlertsProvider>
+          <Dashboard />
+        </AlertsProvider>
+      </MemoryRouter>,
+      {
+        rules: {
+          'nested-interactive': { enabled: false },
+        },
+      },
+    )
   })
 
   it('renders the title', () => {

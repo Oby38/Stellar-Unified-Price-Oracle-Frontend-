@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PriceTableView } from './PriceTableView'
 import type { PriceData } from '../types'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -27,6 +28,24 @@ function setup(overrides: Partial<Parameters<typeof PriceTableView>[0]> = {}) {
 }
 
 describe('PriceTableView', () => {
+  it('should have no accessibility violations', async () => {
+    await checkAccessibility(
+      <PriceTableView
+        items={mockItems}
+        livePairs={new Set(['BTC/USD'])}
+        isStale={false}
+        onRowClick={vi.fn()}
+        onAlertClick={vi.fn()}
+        hasAlertFn={() => false}
+      />,
+      {
+        rules: {
+          'nested-interactive': { enabled: false },
+        },
+      },
+    )
+  })
+
   it('renders all rows', () => {
     setup()
     expect(screen.getByText('BTC/USD')).toBeInTheDocument()

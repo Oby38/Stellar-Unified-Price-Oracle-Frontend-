@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { cleanup, render, screen, fireEvent } from '@testing-library/react'
 import { PriceChart } from './PriceChart'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -10,6 +11,14 @@ const sampleData = [
 ]
 
 describe('PriceChart', () => {
+  it('should have no accessibility violations (loading)', async () => {
+    await checkAccessibility(<PriceChart data={[]} pair="BTC/USD" loading />)
+  })
+
+  it('should have no accessibility violations (empty)', async () => {
+    await checkAccessibility(<PriceChart data={[]} pair="BTC/USD" loading={false} />)
+  })
+
   it('renders loading state', () => {
     render(<PriceChart data={[]} pair="BTC/USD" loading />)
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading chart')

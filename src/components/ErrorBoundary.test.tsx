@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { ErrorBoundary } from './ErrorBoundary'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -10,6 +11,14 @@ const Bomb = ({ shouldThrow }: { shouldThrow: boolean }) => {
 }
 
 describe('ErrorBoundary', () => {
+  it('should have no accessibility violations (children)', async () => {
+    await checkAccessibility(
+      <ErrorBoundary>
+        <div>Hello</div>
+      </ErrorBoundary>,
+    )
+  })
+
   it('renders children when no error', () => {
     render(
       <ErrorBoundary>

@@ -13,11 +13,11 @@ exports[`snapshots > default 1`] = `
     <div
       class="flex items-center gap-2"
     >
-      <h3
+      <h2
         class="text-lg font-semibold text-gray-100"
       >
         BTC/USD
-      </h3>
+      </h2>
     </div>
     <div
       class="flex items-center gap-2"
@@ -127,11 +127,11 @@ exports[`snapshots > hasAlert 1`] = `
     <div
       class="flex items-center gap-2"
     >
-      <h3
+      <h2
         class="text-lg font-semibold text-gray-100"
       >
         BTC/USD
-      </h3>
+      </h2>
     </div>
     <div
       class="flex items-center gap-2"
@@ -246,11 +246,11 @@ exports[`snapshots > isLive 1`] = `
     <div
       class="flex items-center gap-2"
     >
-      <h3
+      <h2
         class="text-lg font-semibold text-gray-100"
       >
         BTC/USD
-      </h3>
+      </h2>
     </div>
     <div
       class="flex items-center gap-2"
@@ -365,11 +365,11 @@ exports[`snapshots > isStale 1`] = `
     <div
       class="flex items-center gap-2"
     >
-      <h3
+      <h2
         class="text-lg font-semibold text-gray-100"
       >
         BTC/USD
-      </h3>
+      </h2>
     </div>
     <div
       class="flex items-center gap-2"

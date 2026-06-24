@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AlertBadge } from './AlertBadge'
 import type { Alert } from '../types'
+import { checkAccessibility } from '../test/accessibility'
 
 afterEach(cleanup)
 
@@ -37,6 +38,10 @@ describe('AlertBadge', () => {
   it('has accessible label', () => {
     render(<AlertBadge count={2} alerts={[baseAlert(), baseAlert({ id: '2' })]} />)
     expect(screen.getByRole('button')).toHaveAttribute('aria-label', '2 active alerts')
+  })
+
+  it('should have no accessibility violations', async () => {
+    await checkAccessibility(<AlertBadge count={2} onClick={vi.fn()} alerts={[baseAlert(), baseAlert({ id: '2' })]} />)
   })
 
   it('calls onClick when clicked', async () => {

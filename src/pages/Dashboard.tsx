@@ -334,11 +334,11 @@ export function Dashboard() {
       {!pricesLoading && prices.length > 0 && <FilterBar />}
 
       {pricesLoading && prices.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" aria-label="Loading price cards">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" aria-label="Loading price cards">
           {Array.from({ length: SKELETON_COUNT }, (_, i) => (
             <PriceCardSkeleton key={i} />
           ))}
-        </div>
+        </section>
       ) : dashboardView === 'table' ? (
         <PriceTableView
           items={filtered}
@@ -388,19 +388,20 @@ export function Dashboard() {
                   {rowItems.map((p, colIdx) => {
                     const globalIdx = startIdx + colIdx
                     return (
-                      <PriceCard
-                        key={p.assetPair}
-                        price={p}
-                        isLive={livePrices.has(p.assetPair)}
-                        isStale={pricesValidating}
-                        hasAlert={hasAlertsForPair(p.assetPair)}
-                        onClick={() => handleCardClick(p.assetPair)}
-                        onAlertClick={(e) => handleAlertClick(e, p.assetPair)}
-                        dragHandleProps={selectMode ? undefined : getHandleProps(globalIdx)}
-                        isDragOver={!selectMode && dragOverIndex === globalIdx}
-                        selectMode={selectMode}
-                        isSelected={selected.has(p.assetPair)}
-                      />
+                      <div key={p.assetPair} role="listitem">
+                        <PriceCard
+                          price={p}
+                          isLive={livePrices.has(p.assetPair)}
+                          isStale={pricesValidating}
+                          hasAlert={hasAlertsForPair(p.assetPair)}
+                          onClick={() => handleCardClick(p.assetPair)}
+                          onAlertClick={(e) => handleAlertClick(e, p.assetPair)}
+                          dragHandleProps={selectMode ? undefined : getHandleProps(globalIdx)}
+                          isDragOver={!selectMode && dragOverIndex === globalIdx}
+                          selectMode={selectMode}
+                          isSelected={selected.has(p.assetPair)}
+                        />
+                      </div>
                     )
                   })}
                 </div>
