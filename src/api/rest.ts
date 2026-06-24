@@ -1,5 +1,6 @@
 import { config } from '../config'
-import type { PriceData, PriceHistoryResponse, RateLimitInfo } from '../types'
+import { fetchWithRetry } from './retry'
+import type { PriceData, PriceHistoryResponse } from '../types'
 import { idbCache } from '../hooks/useIndexedDB'
 
 // Global rate limit info store (Issue #93)
@@ -35,7 +36,7 @@ function setRateLimitInfo(response: Response): void {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${config.apiUrl}${path}`
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
