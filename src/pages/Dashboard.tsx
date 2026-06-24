@@ -14,6 +14,8 @@ import { AlertModal } from '../components/AlertModal'
 import { AlertBadge } from '../components/AlertBadge'
 import { ConnectionBadge } from '../components/ConnectionBadge'
 import { NetworkStatusBanner } from '../components/NetworkStatusBanner'
+import { useAnomalyDetection } from '../anomaly/hooks/useAnomalyDetection'
+import { AnomalyTimeline } from '../anomaly/ui/AnomalyTimeline'
 import type { AlertFormData, LivePriceEntry, PriceData } from '../types'
 
 const ROW_HEIGHT = 200
@@ -76,6 +78,9 @@ export function Dashboard() {
   const columns = useColumnCount(containerRef)
 
   const merged = mergePrices(prices, livePrices)
+
+  // #115 — anomaly detection runs against the live merged price feed
+  const { events: anomalyEvents, markFalsePositive, clearEvents } = useAnomalyDetection(merged)
 
   const orderedMerged = useMemo(() => {
     const order = preferences.cardOrder
@@ -188,6 +193,17 @@ export function Dashboard() {
   return (
     <div>
       <NetworkStatusBanner />
+
+      {/* #115 — Anomaly detection panel (shown when events exist) */}
+      {anomalyEvents.length > 0 && (
+        <div className="mb-4">
+          <AnomalyTimeline
+            events={anomalyEvents}
+            onMarkFalsePositive={markFalsePositive}
+            onClear={clearEvents}
+          />
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Price Oracle Dashboard</h1>
