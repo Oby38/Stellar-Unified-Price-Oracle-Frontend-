@@ -1,6 +1,37 @@
 import { config } from '../config'
-import type { PriceData, PriceHistoryResponse } from '../types'
+import type { PriceData, PriceHistoryResponse, RateLimitInfo } from '../types'
 import { idbCache } from '../hooks/useIndexedDB'
+
+// Global rate limit info store (Issue #93)
+let rateLimitInfo: RateLimitInfo | null = null
+
+/**
+ * Get current rate limit info if available
+ */
+export function getRateLimitInfo(): RateLimitInfo | null {
+  return rateLimitInfo
+}
+
+/**
+ * Set rate limit info (used internally)
+ */
+function setRateLimitInfo(response: Response): void {
+  try {
+    const limit = response.headers.get('x-ratelimit-limit')
+    const remaining = response.headers.get('x-ratelimit-remaining')
+    const reset = response.headers.get('x-ratelimit-reset')
+
+    if (limit && remaining && reset) {
+      rateLimitInfo = {
+        limit: parseInt(limit, 10),
+        remaining: parseInt(remaining, 10),
+        reset: parseInt(reset, 10),
+      }
+    }
+  } catch {
+    // Silently fail to parse headers
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${config.apiUrl}${path}`
@@ -8,6 +39,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
+
+  // Parse rate limit headers (Issue #93)
+  setRateLimitInfo(res)
+
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     throw new Error(`${res.status} ${res.statusText}: ${text}`)
