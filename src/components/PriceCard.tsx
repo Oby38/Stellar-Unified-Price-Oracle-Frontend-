@@ -1,6 +1,8 @@
 import { memo } from 'react'
 import type { PriceData } from '../types'
 import { formatPrice, timeAgo } from '../utils/format'
+import { useCardContextMenu, type CardContextMenuAction } from './CardContextMenu'
+
 const SOURCE_COLORS: Record<string, string> = {
   chainlink: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30',
   redstone: 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30',
@@ -33,6 +35,19 @@ interface PriceCardProps {
 export const PriceCard = memo(function PriceCard({ price, onClick, isLive, isStale, hasAlert, onAlertClick, dragHandleProps, isDragOver, selectMode, isSelected }: PriceCardProps) {
   const confidencePct = (price.confidence * 100).toFixed(1)
 
+  const contextActions: CardContextMenuAction = {
+    onSetAlert: () => {
+      // Synthesise a click on the alert button via the prop
+      onAlertClick?.({} as React.MouseEvent)
+    },
+  }
+
+  const { contextMenuProps, overflowButtonProps, menuElement } = useCardContextMenu(
+    price.assetPair,
+    price.price,
+    contextActions,
+  )
+
   return (
     <div
       onClick={onClick}
@@ -64,72 +79,74 @@ export const PriceCard = memo(function PriceCard({ price, onClick, isLive, isSta
           ) : dragHandleProps ? (
             <button
               type="button"
-              aria-label={`Drag handle for ${price.assetPair}`}
-              tabIndex={0}
-              className="cursor-grab text-gray-600 hover:text-gray-400 touch-none"
-              onClick={(e) => e.stopPropagation()}
-              {...dragHandleProps}
+              {...overflowButtonProps}
+              onClick={(e) => {
+                e.stopPropagation()
+                overflowButtonProps.onClick(e)
+              }}
+              className="p-1 rounded-md text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-colors"
             >
               <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <circle cx="5" cy="4" r="1.2" />
-                <circle cx="5" cy="8" r="1.2" />
-                <circle cx="5" cy="12" r="1.2" />
-                <circle cx="11" cy="4" r="1.2" />
-                <circle cx="11" cy="8" r="1.2" />
-                <circle cx="11" cy="12" r="1.2" />
+                <circle cx="8" cy="3" r="1.2" />
+                <circle cx="8" cy="8" r="1.2" />
+                <circle cx="8" cy="13" r="1.2" />
               </svg>
             </button>
           ) : null}
           <h3 className="text-lg font-semibold text-gray-100">{price.assetPair}</h3>
         </div>
-        <div className="flex items-center gap-2">
-          {hasAlert && (
+
+        <div className="text-3xl font-bold text-gray-900 dark:text-white mb-3 font-mono tracking-tight">
+          ${formatPrice(price.price)}
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mb-3">
+          <span>Updated {timeAgo(price.timestamp)}</span>
+          <span className="text-cyan-600 dark:text-cyan-400">{confidencePct}% confidence</span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {price.sources.map((src) => (
             <span
-              className="w-2 h-2 rounded-full bg-amber-400"
-              role="status"
-              aria-label="Active alert"
-            />
-          )}
-          {isLive && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" role="status" aria-label="Live data" />}
+              key={src}
+              className={`px-2 py-0.5 rounded text-xs font-medium border ${SOURCE_COLORS[src] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
+            >
+              {src}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-gray-800">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onAlertClick?.(e)
+            }}
+            className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${hasAlert ? 'text-amber-400 hover:text-amber-300' : 'text-gray-500 hover:text-gray-300'}`}
+            aria-label={`Set alert for ${price.assetPair}`}
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+              />
+            </svg>
+            {hasAlert ? 'Alert set' : 'Set alert'}
+          </button>
         </div>
       </div>
 
-      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-3 font-mono tracking-tight">
-        ${formatPrice(price.price)}
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mb-3">
-        <span>Updated {timeAgo(price.timestamp)}</span>
-        <span className="text-cyan-600 dark:text-cyan-400">{confidencePct}% confidence</span>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5">
-        {price.sources.map((src) => (
-          <span
-            key={src}
-            className={`px-2 py-0.5 rounded text-xs font-medium border ${SOURCE_COLORS[src] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
-          >
-            {src}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-gray-800">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onAlertClick?.(e)
-          }}
-          className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${hasAlert ? 'text-amber-400 hover:text-amber-300' : 'text-gray-500 hover:text-gray-300'}`}
-          aria-label={`Set alert for ${price.assetPair}`}
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-          </svg>
-          {hasAlert ? 'Alert set' : 'Set alert'}
-        </button>
-      </div>
-    </div>
+      {/* Context menu portal */}
+      {menuElement}
+    </>
   )
 })
