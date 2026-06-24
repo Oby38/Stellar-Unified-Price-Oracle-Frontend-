@@ -2,6 +2,13 @@ import { config } from '../config'
 import { fetchWithRetry } from './retry'
 import type { PriceData, PriceHistoryResponse } from '../types'
 import { idbCache } from '../hooks/useIndexedDB'
+import {
+  PriceDataSchema,
+  PriceHistoryResponseSchema,
+  BatchHistoryResponseSchema,
+  HealthSchema,
+} from './schemas'
+import { validate } from './validate'
 
 // Global rate limit info store (Issue #93)
 let rateLimitInfo: RateLimitInfo | null = null
@@ -51,45 +58,84 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function fetchAllPrices(pairs?: string[]): Promise<PriceData[]> {
-  const params = pairs?.length ? `?pairs=${pairs.join(',')}` : ''
-  const cacheKey = `all${params}`
-  try {
-    const data = await request<PriceData[]>(`/api/prices${params}`)
-    idbCache.set('prices', cacheKey, data)
-    return data
-  } catch (err) {
-    // Serve stale cache on network failure (offline support)
-    const cached = await idbCache.get<PriceData[]>('prices', cacheKey, Infinity)
-    if (cached) return cached
-    throw err
-  }
+// ---------------------------------------------------------------------------
+// Request coalescing for fetchPriceHistory
+// Requests within a 50ms window are batched into a single POST.
+// Falls back to individual GETs when the batch endpoint is unavailable.
+// ---------------------------------------------------------------------------
+interface Waiter {
+  resolve: (value: PriceHistoryResponse) => void
+  reject: (reason: unknown) => void
 }
 
-export async function fetchPrice(pair: string): Promise<PriceData> {
-  try {
-    const data = await request<PriceData>(`/api/prices/${encodeURIComponent(pair)}`)
-    idbCache.set('prices', pair, data)
-    return data
-  } catch (err) {
-    const cached = await idbCache.get<PriceData>('prices', pair, Infinity)
-    if (cached) return cached
-    throw err
-  }
+// key = `${pair}:${limit}:${offset}`
+const pending = new Map<string, Waiter[]>()
+let coalesceTimer: ReturnType<typeof setTimeout> | null = null
+const COALESCE_WINDOW_MS = 50
+
+// pair may contain ":" (e.g. "BTC/USD") but limit/offset are always the last two segments
+function keyToPair(key: string): string {
+  const parts = key.split(':')
+  return parts.slice(0, parts.length - 2).join(':')
 }
 
-export async function fetchPriceHistory(
+function keyToLimitOffset(key: string): { limit: number; offset: number } {
+  const parts = key.split(':')
+  return { limit: Number(parts[parts.length - 2]), offset: Number(parts[parts.length - 1]) }
+}
+
+function flushCoalesced() {
+  coalesceTimer = null
+  if (pending.size === 0) return
+
+  const snapshot = new Map(pending)
+  pending.clear()
+
+  const keys = [...snapshot.keys()]
+  const pairs = keys.map(keyToPair)
+
+  fetchBatchHistory(pairs)
+    .then((results) => {
+      const byPair = new Map(results.map((r) => [r.pair, r]))
+      for (const [key, waiters] of snapshot) {
+        const pair = keyToPair(key)
+        const result = byPair.get(pair)
+        if (result) {
+          waiters.forEach((w) => w.resolve(result))
+        } else {
+          // batch returned no entry for this pair — fallback to individual
+          const { limit, offset } = keyToLimitOffset(key)
+          _fetchHistoryDirect(pair, limit, offset).then(
+            (r) => waiters.forEach((w) => w.resolve(r)),
+            (e) => waiters.forEach((w) => w.reject(e)),
+          )
+        }
+      }
+    })
+    .catch(() => {
+      // Batch endpoint unavailable — fall back to individual requests
+      for (const [key, waiters] of snapshot) {
+        const pair = keyToPair(key)
+        const { limit, offset } = keyToLimitOffset(key)
+        _fetchHistoryDirect(pair, limit, offset).then(
+          (r) => waiters.forEach((w) => w.resolve(r)),
+          (e) => waiters.forEach((w) => w.reject(e)),
+        )
+      }
+    })
+}
+
+async function _fetchHistoryDirect(
   pair: string,
-  limit = 100,
-  offset = 0,
-  _startTs?: number,
-  _endTs?: number,
+  limit: number,
+  offset: number,
 ): Promise<PriceHistoryResponse> {
   const cacheKey = `${pair}:${limit}:${offset}`
   try {
-    const data = await request<PriceHistoryResponse>(
-      `/api/prices/${encodeURIComponent(pair)}/history?limit=${limit}&offset=${offset}`
+    const raw = await request<PriceHistoryResponse>(
+      `/api/prices/${encodeURIComponent(pair)}/history?limit=${limit}&offset=${offset}`,
     )
+    const data = validate(PriceHistoryResponseSchema, raw)
     idbCache.set('history', cacheKey, data)
     return data
   } catch (err) {
@@ -99,6 +145,70 @@ export async function fetchPriceHistory(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+export async function fetchAllPrices(pairs?: string[]): Promise<PriceData[]> {
+  const params = pairs?.length ? `?pairs=${pairs.join(',')}` : ''
+  const cacheKey = `all${params}`
+  try {
+    const raw = await request<PriceData[]>(`/api/prices${params}`)
+    const data = validate(PriceDataSchema.array(), raw)
+    idbCache.set('prices', cacheKey, data)
+    return data
+  } catch (err) {
+    const cached = await idbCache.get<PriceData[]>('prices', cacheKey, Infinity)
+    if (cached) return cached
+    throw err
+  }
+}
+
+export async function fetchPrice(pair: string): Promise<PriceData> {
+  try {
+    const raw = await request<PriceData>(`/api/prices/${encodeURIComponent(pair)}`)
+    const data = validate(PriceDataSchema, raw)
+    idbCache.set('prices', pair, data)
+    return data
+  } catch (err) {
+    const cached = await idbCache.get<PriceData>('prices', pair, Infinity)
+    if (cached) return cached
+    throw err
+  }
+}
+
+/** Coalesces concurrent calls within a 50ms window into a single batch request. */
+export function fetchPriceHistory(
+  pair: string,
+  limit = 100,
+  offset = 0,
+  _startTs?: number,
+  _endTs?: number,
+): Promise<PriceHistoryResponse> {
+  const key = `${pair}:${limit}:${offset}`
+
+  return new Promise<PriceHistoryResponse>((resolve, reject) => {
+    const existing = pending.get(key)
+    if (existing) {
+      existing.push({ resolve, reject })
+    } else {
+      pending.set(key, [{ resolve, reject }])
+    }
+    if (!coalesceTimer) {
+      coalesceTimer = setTimeout(flushCoalesced, COALESCE_WINDOW_MS)
+    }
+  })
+}
+
+/** Batch-fetch history for multiple pairs in one request. */
+export async function fetchBatchHistory(pairs: string[]): Promise<PriceHistoryResponse[]> {
+  const raw = await request<PriceHistoryResponse[]>('/api/prices/history/batch', {
+    method: 'POST',
+    body: JSON.stringify({ pairs }),
+  })
+  return validate(BatchHistoryResponseSchema, raw)
+}
+
 export async function fetchHealth(): Promise<{ status: string; uptime: number }> {
-  return request('/health')
+  const raw = await request('/health')
+  return validate(HealthSchema, raw)
 }
