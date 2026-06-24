@@ -3,8 +3,10 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Dashboard } from './pages/Dashboard'
+import { PriceDetail } from './pages/PriceDetail'
 import { NotFound } from './pages/NotFound'
 import { useWebVitals } from './hooks/useWebVitals'
+import { useAccessibility } from './hooks/useAccessibility'
 import { AlertsProvider } from './hooks/useAlerts'
 import { PreferencesProvider } from './preferences/PreferencesContext'
 import { ToastProvider } from './context/ToastContext'
@@ -12,38 +14,40 @@ import { ToastContainer } from './components/ToastContainer'
 import { AnalyticsProvider } from './context/AnalyticsContext'
 import { AnalyticsConsentBanner } from './components/AnalyticsConsentBanner'
 import { AnalyticsCollector } from './utils/analytics'
-import { usePriceContext } from './context/PriceContext'
-import { useObservability } from './observability/hooks/useObservability'
-import { ObservabilityDashboard } from './observability/ui/ObservabilityDashboard'
 import { config } from './config'
-
-const PriceDetail = lazy(() =>
-  import('./pages/PriceDetail').then((m) => ({ default: m.PriceDetail })),
-)
 
 const BASENAME = import.meta.env.BASE_URL.replace(/\/$/, '')
 
+// Initialize analytics on module load
 if (config.analyticsEndpoint) {
   AnalyticsCollector.init(config.analyticsEndpoint)
+}
+
+// Inner component that requires AlertsProvider and PreferencesProvider context
+function AppContentInner() {
+  useAccessibility()
+  return (
+    <AlertsProvider>
+      <Layout>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/price/:pair" element={<PriceDetail />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </Layout>
+    </AlertsProvider>
+  )
 }
 
 function AppContent() {
   const location = useLocation()
   return (
     <ErrorBoundary key={location.key}>
-      <AlertsProvider>
-        <PreferencesProvider>
-          <Layout>
-            <Suspense fallback={null}>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/price/:pair" element={<PriceDetail />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </Layout>
-        </PreferencesProvider>
-      </AlertsProvider>
+      <PreferencesProvider>
+        <AppContentInner />
+      </PreferencesProvider>
     </ErrorBoundary>
   )
 }
@@ -58,7 +62,6 @@ export default function App() {
           <AppContent />
           <ToastContainer />
           <AnalyticsConsentBanner />
-          <ObservabilityOverlay />
         </AnalyticsProvider>
       </ToastProvider>
     </BrowserRouter>

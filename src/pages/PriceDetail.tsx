@@ -33,7 +33,6 @@ export function PriceDetail() {
   const decodedPair = pair ? decodeURIComponent(pair) : null
 
   const [dateRange, setDateRange] = useState<DateRange>(() => parseDateRange(searchParams))
-
   const historyParams = useMemo(() => dateRangeToParams(dateRange), [dateRange])
 
   const { history, loading: historyLoading } = usePriceHistory(decodedPair, historyParams)
@@ -111,20 +110,6 @@ export function PriceDetail() {
     return null
   }
 
-  if (!priceData) {
-    return (
-      <div className="text-center py-32 text-gray-500">
-        <p className="text-lg mb-2">Price feed not found</p>
-        <button
-          onClick={() => navigate('/')}
-          className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 rounded-lg text-sm font-medium hover:bg-cyan-500/20 transition-colors cursor-pointer"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    )
-  }
-
   const pairAlerts = getAlertsForPair(decodedPair)
 
   return (
@@ -141,68 +126,98 @@ export function PriceDetail() {
         Back to Dashboard
       </button>
 
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 mb-8">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-white">{decodedPair}</h1>
-              {hasAlertsForPair(decodedPair) && (
-                <span className="w-2 h-2 rounded-full bg-amber-400" role="status" aria-label="Active alert" />
-              )}
-              {liveEntry && (
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              )}
-              {liveEntry?.syncState === 'optimistic' && (
-                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
-                  Optimistic update
-                </span>
-              )}
-              {liveEntry?.syncState === 'rollback' && (
-                <span className="rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-300">
-                  REST corrected
-                </span>
-              )}
+      {priceData && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 mb-8">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold text-white">{decodedPair}</h1>
+                {hasAlertsForPair(decodedPair) && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400" role="status" aria-label="Active alert" />
+                )}
+                {liveEntry && (
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                )}
+                {liveEntry?.syncState === 'optimistic' && (
+                  <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+                    Optimistic update
+                  </span>
+                )}
+                {liveEntry?.syncState === 'rollback' && (
+                  <span className="rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-300">
+                    REST corrected
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Last updated: {formatTimestamp(priceData.timestamp)}
+              </p>
             </div>
-            <p className="text-sm text-gray-400 dark:text-gray-500">
-              Last updated: {formatTimestamp(priceData.timestamp)}
-            </p>
+            <div className="flex items-center gap-3">
+              <ExportButton
+                onExport={(fmt) => exportHistory(decodedPair, history, fmt)}
+                exporting={exporting}
+                disabled={history.length === 0}
+              />
+              <AlertBadge count={pairAlerts.length} alerts={pairAlerts} onClick={handleOpenModal} />
+              <span className="text-sm text-cyan-400">
+                {(priceData.confidence * 100).toFixed(1)}% confidence
+              </span>
+              <ConnectionBadge status={wsStatus} />
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <ExportButton
-              onExport={(fmt) => exportHistory(decodedPair, history, fmt)}
-              exporting={exporting}
-              disabled={history.length === 0}
-            />
-            <AlertBadge count={pairAlerts.length} alerts={pairAlerts} onClick={handleOpenModal} />
-            <span className="text-sm text-cyan-400">
-              {(priceData.confidence * 100).toFixed(1)}% confidence
-            </span>
-            <ConnectionBadge status={wsStatus} />
+
+          <div
+            className={`text-5xl font-bold text-gray-900 dark:text-white mb-4 font-mono tracking-tight transition-colors duration-700 ${
+              liveEntry?.syncState === 'confirmed'
+                ? 'text-emerald-300'
+                : liveEntry?.syncState === 'rollback'
+                  ? 'text-rose-300'
+                  : ''
+            }`}
+          >
+            ${formatPrice(priceData.price)}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Oracle Sources</p>
+              <SourceHealthBadge sources={priceData.sources} />
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenModal}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-colors ${hasAlertsForPair(decodedPair) ? 'text-amber-400 bg-amber-400/10 border border-amber-400/20 hover:bg-amber-400/20' : 'text-gray-400 bg-gray-800 border border-gray-700 hover:bg-gray-700 hover:text-gray-300'}`}
+              aria-label={hasAlertsForPair(decodedPair) ? 'Manage alerts' : 'Set price alert'}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                />
+              </svg>
+              {hasAlertsForPair(decodedPair) ? 'Manage Alert' : 'Set Alert'}
+            </button>
           </div>
         </div>
+      )}
 
-        <div
-          className={`text-5xl font-bold text-gray-900 dark:text-white mb-4 font-mono tracking-tight transition-colors duration-700 ${
-            liveEntry?.syncState === 'confirmed'
-              ? 'text-emerald-300'
-              : liveEntry?.syncState === 'rollback'
-                ? 'text-rose-300'
-                : ''
-          }`}
-        >
-          ${formatPrice(priceData.price)}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-500 mb-2">Oracle Sources</p>
-            <SourceHealthBadge sources={priceData.sources} />
-          </div>
+      {!priceData && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8 flex items-center justify-between text-gray-500">
+          <p>{historyLoading ? 'Loading...' : `No price data for ${decodedPair}`}</p>
           <button
             type="button"
             onClick={handleOpenModal}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-colors ${hasAlertsForPair(decodedPair) ? 'text-amber-400 bg-amber-400/10 border border-amber-400/20 hover:bg-amber-400/20' : 'text-gray-400 bg-gray-800 border border-gray-700 hover:bg-gray-700 hover:text-gray-300'}`}
-            aria-label={hasAlertsForPair(decodedPair) ? 'Manage alerts' : 'Set price alert'}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 hover:text-gray-300 transition-colors"
+            aria-label="Set price alert"
           >
             <svg
               className="w-4 h-4"
@@ -218,10 +233,10 @@ export function PriceDetail() {
                 d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
               />
             </svg>
-            {hasAlertsForPair(decodedPair) ? 'Manage Alert' : 'Set Alert'}
+            Set Alert
           </button>
         </div>
-      </div>
+      )}
 
       <div className="mb-4">
         <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
@@ -239,6 +254,7 @@ export function PriceDetail() {
         onDelete={editingAlert ? handleDelete : undefined}
         alert={editingAlert}
         currentPrice={priceData?.price}
+        defaultAssetPair={decodedPair}
       />
     </div>
   )
