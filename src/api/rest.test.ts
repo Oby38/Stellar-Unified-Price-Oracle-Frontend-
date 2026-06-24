@@ -65,7 +65,7 @@ describe('fetchAllPrices', () => {
   it('throws HttpRetryError after retrying transient 5xx failures', async () => {
     mockFetch.mockResolvedValue(errorResponse(500, 'Server error'))
     const promise = fetchAllPrices()
-    vi.advanceTimersByTime(10000)
+    await vi.runAllTimersAsync()
     await expect(promise).rejects.toThrow('HTTP 500 Server error')
   }, 10_000)
 })
