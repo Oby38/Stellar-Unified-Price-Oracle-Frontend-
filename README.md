@@ -30,6 +30,7 @@ A real-time dashboard for the Stellar Unified Price Oracle & Aggregator. Display
 | Styling | Tailwind CSS v4 |
 | Charts | Recharts |
 | Routing | React Router v7 |
+| Virtualization | @tanstack/react-virtual |
 | Real-time | Native WebSocket |
 
 ## Quick Start
