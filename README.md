@@ -83,7 +83,21 @@ src/
 ├── hooks/        # React hooks for data fetching
 ├── pages/        # Route pages
 └── types/        # TypeScript definitions
+docs/
+└── adr/          # Architecture Decision Records
 ```
+
+## Architecture Decision Records
+
+Key architectural decisions are documented in [`docs/adr/`](docs/adr/):
+
+| ADR | Decision |
+|---|---|
+| [ADR-001](docs/adr/ADR-001-react-vite-typescript.md) | React + Vite + TypeScript |
+| [ADR-002](docs/adr/ADR-002-state-management.md) | State management strategy |
+| [ADR-003](docs/adr/ADR-003-websocket-vs-polling.md) | WebSocket vs polling architecture |
+| [ADR-004](docs/adr/ADR-004-tailwind-css.md) | Tailwind CSS for styling |
+| [ADR-005](docs/adr/ADR-005-error-handling.md) | Error handling strategy |
 
 ## License
 
