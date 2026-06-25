@@ -1,12 +1,20 @@
 import { memo } from 'react'
 import type { PriceData, PriceSyncState } from '../types'
 import { formatPrice, timeAgo } from '../utils/format'
+import { Tooltip } from './Tooltip'
 
 const SOURCE_COLORS: Record<string, string> = {
   chainlink: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30',
   redstone: 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30',
   band: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30',
   reflector: 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+}
+
+const SOURCE_DESCRIPTIONS: Record<string, string> = {
+  chainlink: 'Chainlink is a decentralised oracle network that delivers tamper-proof price data from premium data providers.',
+  redstone: 'RedStone is a modular oracle that streams signed price feeds on demand, reducing gas costs by storing data off-chain.',
+  band: 'Band Protocol aggregates real-world data from multiple sources and makes it available on-chain via delegated validators.',
+  reflector: 'Reflector is a Stellar-native oracle that publishes asset prices directly on the Stellar network.',
 }
 
 interface PriceCardProps {
@@ -65,17 +73,20 @@ export const PriceCard = memo(function PriceCard({ price, onClick, isStale, hasA
 
       <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mb-3">
         <span>Updated {timeAgo(price.timestamp)}</span>
-        <span className="text-cyan-600 dark:text-cyan-400">{confidencePct}% confidence</span>
+        <Tooltip content="Confidence reflects how consistent the price is across oracle sources. 100% means all sources agree exactly.">
+          <span className="text-cyan-600 dark:text-cyan-400">{confidencePct}% confidence</span>
+        </Tooltip>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
         {price.sources.map((src) => (
-          <span
-            key={src}
-            className={`px-2 py-0.5 rounded text-xs font-medium border ${SOURCE_COLORS[src] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
-          >
-            {src}
-          </span>
+          <Tooltip key={src} content={SOURCE_DESCRIPTIONS[src] ?? `${src} contributed a price feed to this aggregated value.`}>
+            <span
+              className={`px-2 py-0.5 rounded text-xs font-medium border ${SOURCE_COLORS[src] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
+            >
+              {src}
+            </span>
+          </Tooltip>
         ))}
       </div>
 
